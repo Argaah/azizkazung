@@ -1,178 +1,524 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💬 ChatAPI Ryzumi</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>💬 ChatAPI Ryzumi</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Define basic font size for responsive units */
+        font-size: 16px; /* Default for larger screens */
+      }
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
+      * {
+        box-sizing: border-box;
+        transition: 0.3s ease;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        margin: 0;
+        background: #1f1f1f;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden; /* Prevent body scroll, chat-container will scroll */
+      }
+      header {
+        padding: 1rem 1.25rem; /* Use rem for responsive padding */
+        background: #2a2a2a;
+        display: flex;
+        flex-direction: column; /* Stack elements vertically on small screens */
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #333;
+        gap: 0.5rem; /* Space between title and select */
+      }
+      header h1 {
+        margin: 0;
+        font-size: 1.25rem; /* Use rem for font size */
+        text-align: center;
+      }
+      header select {
+        background: #333;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem; /* Use rem for padding */
+        font-size: 0.9rem; /* Slightly smaller font for select */
+        width: 100%; /* Full width on small screens */
+        max-width: 300px; /* Max width for select */
+      }
+      .chat-container {
+        flex: 1;
+        padding: 1.25rem; /* Use rem for padding */
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem; /* Use rem for gap */
+        scrollbar-width: thin; /* For Firefox */
+        scrollbar-color: #4f46e5 #2a2a2a; /* For Firefox */
+      }
+      /* Custom scrollbar for Webkit browsers */
+      .chat-container::-webkit-scrollbar {
+        width: 8px;
+      }
 
-<style>
-body{
-  font-family:Inter,sans-serif;
-  margin:0;
-  background:#1f1f1f;
-  color:#fff;
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-}
-header{
-  padding:15px;
-  background:#2a2a2a;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-header select{
-  background:#333;
-  color:#fff;
-  border:none;
-  border-radius:8px;
-  padding:8px;
-}
-.chat-container{
-  flex:1;
-  padding:20px;
-  overflow-y:auto;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.bubble{
-  max-width:80%;
-  padding:12px 15px;
-  border-radius:15px;
-  word-break:break-word;
-  white-space:pre-wrap;
-}
-.user{
-  background:#4f46e5;
-  align-self:flex-end;
-}
-.api{
-  background:#333;
-  align-self:flex-start;
-}
-.loading-indicator{
-  font-style:italic;
-  color:#aaa;
-}
-footer{
-  padding:15px;
-  background:#2a2a2a;
-}
-.controls{
-  display:flex;
-  gap:10px;
-}
-input{
-  flex:1;
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  background:#333;
-  color:white;
-}
-button{
-  padding:10px 15px;
-  border:none;
-  border-radius:8px;
-  background:#4f46e5;
-  color:white;
-  cursor:pointer;
-}
-button:hover{
-  background:#6366f1;
-}
-</style>
-</head>
+      .chat-container::-webkit-scrollbar-track {
+        background: #2a2a2a;
+        border-radius: 10px;
+      }
 
-<body>
+      .chat-container::-webkit-scrollbar-thumb {
+        background-color: #4f46e5;
+        border-radius: 10px;
+        border: 2px solid #2a2a2a;
+      }
 
-<header>
-  <h3>adr6hmn.com</h3>
-  <select id="endpoint">
-    <option value="ai/chatgpt">AI - ChatGPT</option>
-    <option value="ai/gemini">AI - Gemini</option>
-    <option value="ai/deepseek">AI - DeepSeek</option>
-  </select>
-</header>
+      .bubble {
+        max-width: 85%; /* Slightly more width for bubbles on mobile */
+        padding: 0.75rem 1rem; /* Use rem for padding */
+        border-radius: 1rem; /* Use rem for border-radius */
+        word-break: break-word;
+        white-space: pre-wrap;
+        position: relative;
+        line-height: 1.4;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        animation: fadeInUp 0.3s ease;
+        font-size: 0.95rem; /* Adjust bubble font size */
+      }
+      .bubble.user {
+        background: #4f46e5;
+        align-self: flex-end;
+        border-bottom-right-radius: 0;
+      }
+      .bubble.api {
+        background: #333;
+        align-self: flex-start;
+        border-bottom-left-radius: 0;
+      }
+      .bubble img {
+        max-width: 100%;
+        margin-top: 0.625rem; /* Use rem for margin */
+        border-radius: 0.625rem; /* Use rem for border-radius */
+        display: block;
+      }
+      .bubble.image-bubble {
+        padding: 0.5rem; /* Adjust padding for image bubbles */
+        background: none;
+        box-shadow: none;
+      }
+      .bubble.image-bubble .image-content {
+        max-width: 15.625rem; /* Max width for image in bubble (250px) */
+        border-radius: 1rem; /* Use rem for border-radius */
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+      .bubble.image-bubble.user .image-content {
+        background: #4f46e5;
+        border-bottom-right-radius: 0;
+      }
+      .bubble.image-bubble.api .image-content {
+        background: #333;
+        border-bottom-left-radius: 0;
+      }
+      .bubble.image-bubble .image-content img {
+        width: 100%;
+        height: auto;
+        margin: 0;
+        border-radius: 0;
+        display: block;
+      }
+      .bubble.image-bubble .image-caption {
+        padding: 0.5rem 0.75rem; /* Use rem for padding */
+        color: #fff;
+        font-size: 0.85rem; /* Adjust caption font size */
+        word-break: break-word;
+      }
+      .loading-indicator {
+        font-style: italic;
+        color: #aaa;
+        align-self: flex-start;
+        padding: 0.3125rem 0.625rem; /* Use rem for padding */
+        font-size: 0.8rem; /* Adjust font size */
+      }
+      footer {
+        padding: 0.9375rem 1.25rem; /* Use rem for padding */
+        background: #2a2a2a;
+        border-top: 1px solid #333;
+      }
+      .controls {
+        display: flex;
+        gap: 0.625rem; /* Use rem for gap */
+        align-items: center;
+      }
+      input[type="text"] {
+        flex: 1;
+        padding: 0.625rem; /* Use rem for padding */
+        border-radius: 0.625rem; /* Use rem for border-radius */
+        border: none;
+        background: #333;
+        color: #fff;
+        font-size: 0.95rem; /* Adjust font size */
+      }
+      button {
+        padding: 0.625rem 1rem; /* Use rem for padding */
+        border-radius: 0.625rem; /* Use rem for border-radius */
+        border: none;
+        background: #4f46e5;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 0.95rem; /* Adjust font size */
+        flex-shrink: 0; /* Prevent button from shrinking */
+      }
+      button:hover {
+        background: #6366f1;
+      }
+      #uploadLabel {
+        cursor: pointer;
+        font-size: 1.5rem; /* Larger icon for easier tapping */
+        padding: 0.5rem; /* Adjust padding */
+        color: #aaa;
+        background: #333;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px; /* Fixed width for circular button */
+        height: 40px; /* Fixed height for circular button */
+        flex-shrink: 0;
+      }
+      #imageInput {
+        display: none;
+      }
+      #previewImageContainer {
+        display: none;
+        padding: 0.625rem; /* Use rem for padding */
+        background: #2a2a2a;
+        border-top-left-radius: 0.75rem;
+        border-top-right-radius: 0.75rem;
+        margin-bottom: 0.625rem;
+        border-bottom: 1px solid #333;
+        position: relative;
+        align-items: center; /* Vertically align image and close button */
+        justify-content: center; /* Center content horizontally */
+      }
+      #previewImageContainer img {
+        max-height: 7.5rem; /* Max height for preview image (120px) */
+        border-radius: 0.5rem; /* Use rem for border-radius */
+        display: block;
+        margin: 0 auto; /* Center image */
+      }
+      #clearImagePreview {
+        position: absolute;
+        top: 0.3125rem; /* 5px */
+        right: 0.625rem; /* 10px */
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 1.5rem; /* 24px */
+        height: 1.5rem; /* 24px */
+        font-size: 0.875rem; /* 14px */
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0; /* Remove default padding for button */
+      }
 
-<div class="chat-container" id="chatContainer"></div>
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(0.625rem); /* 10px */
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-<footer>
-  <div class="controls">
-    <input type="text" id="inputData" placeholder="Tulis pesan..." onkeydown="if(event.key==='Enter'){callApi()}">
-    <button onclick="callApi()">Kirim</button>
-  </div>
-</footer>
+      /* --- Media Queries for Responsiveness --- */
 
-<script>
+      /* Adjustments for screens smaller than 768px (typical tablet breakpoint) */
+      @media (max-width: 48em) {
+        /* 768px / 16px = 48em */
+        :root {
+          font-size: 15px; /* Slightly smaller base font size for tablets */
+        }
+
+        header {
+          flex-direction: column; /* Stack elements vertically */
+          align-items: center;
+          padding: 1rem;
+        }
+
+        header select {
+          margin-top: 0.5rem; /* Add some space when stacked */
+          width: 90%; /* Make select box wider */
+        }
+
+        .chat-container {
+          padding: 1rem;
+        }
+
+        .bubble {
+          max-width: 90%; /* Allow bubbles to take more width */
+          font-size: 0.9rem;
+        }
+
+        .bubble.image-bubble .image-content {
+          max-width: 100%; /* Image bubbles can take full width of parent */
+        }
+
+        footer {
+          padding: 0.75rem 1rem;
+        }
+
+        .controls {
+          flex-wrap: wrap; /* Allow controls to wrap to next line */
+          justify-content: center; /* Center controls when wrapped */
+        }
+
+        input[type="text"] {
+          min-width: 70%; /* Ensure input field is not too small */
+          margin-bottom: 0.5rem; /* Space when wrapped */
+        }
+
+        button,
+        #uploadLabel {
+          flex-grow: 1; /* Allow buttons to grow and fill space */
+          max-width: 48%; /* Two buttons per row when wrapped */
+        }
+      }
+
+      /* Adjustments for screens smaller than 576px (typical phone breakpoint) */
+      @media (max-width: 36em) {
+        /* 576px / 16px = 36em */
+        :root {
+          font-size: 14px; /* Even smaller base font size for phones */
+        }
+
+        header h1 {
+          font-size: 1.1rem;
+        }
+
+        header select {
+          font-size: 0.85rem;
+          padding: 0.6rem 0.8rem;
+        }
+
+        .chat-container {
+          padding: 0.75rem;
+          gap: 0.5rem;
+        }
+
+        .bubble {
+          padding: 0.6rem 0.8rem;
+          font-size: 0.85rem;
+          max-width: 95%; /* Almost full width for bubbles */
+        }
+
+        .bubble.image-bubble .image-caption {
+          font-size: 0.8rem;
+        }
+
+        footer {
+          padding: 0.6rem 0.8rem;
+        }
+
+        .controls {
+          flex-direction: column; /* Stack controls vertically */
+          gap: 0.5rem;
+        }
+
+        input[type="text"] {
+          width: 100%; /* Full width for input */
+          margin-bottom: 0; /* Remove margin when stacked */
+        }
+
+        button,
+        #uploadLabel {
+          width: 100%; /* Full width for buttons */
+          max-width: 100%; /* Override max-width from tablet styles */
+          padding: 0.8rem; /* Slightly larger tap area for buttons */
+        }
+
+        #uploadLabel {
+          font-size: 1.8rem; /* Larger icon for easy tapping */
+          width: auto; /* Allow width to be determined by content + padding */
+          height: auto; /* Allow height to be determined by content + padding */
+          border-radius: 0.625rem; /* Match button border-radius */
+        }
+
+        #previewImageContainer {
+          padding: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        #previewImageContainer img {
+          max-height: 6rem; /* Smaller preview image */
+        }
+
+        #clearImagePreview {
+          width: 1.2rem;
+          height: 1.2rem;
+          font-size: 0.75rem;
+          top: 0.2rem;
+          right: 0.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>adr6hmn.com</h1>
+      <select id="endpoint" onchange="onEndpointChange()">
+        <option value="downloader/ttdl">Downloader - TikTok Downloader</option>
+        <option value="downloader/ytmp4">Downloader - YouTube MP4</option>
+        <option value="downloader/ytmp3">Downloader - YouTube MP3</option>
+        <option value="downloader/twitter">Downloader - Twitter</option>
+        <option value="downloader/igdl">Downloader - Instagram</option>
+        <option value="downloader/aiodown">Downloader - AIO Downloader</option>
+        <option value="ai/chatgpt">AI - ChatGPT</option>
+        <option value="ai/deepseek">AI - DeepSeek AI</option>
+        <option value="ai/gemini">AI - Gemini AI</option>
+        <option value="ai/v2/remini">AI - Remini v2</option>
+        <option value="ai/v2/text2img">AI - Text to Image v2</option>
+        <option value="ai/toanime">AI - ToAnime</option>
+      </select>
+    </header>
+
+    <div class="chat-container" id="chatContainer"></div>
+
+    <footer>
+      <div id="previewImageContainer">
+        <img id="previewImage" src="" />
+        <button id="clearImagePreview">X</button>
+      </div>
+      <div class="controls">
+        <input
+          type="text"
+          id="inputData"
+          placeholder="Tulis pesan atau link..."
+          onkeydown="if(event.key==='Enter'){callApi()}"
+        />
+        <label id="uploadLabel" for="imageInput">📎</label>
+        <input type="file" id="imageInput" accept="image/*" />
+        <button onclick="callApi()">📤</button>
+      </div>
+    </footer>
+
+    <script>
 const chatContainer = document.getElementById("chatContainer");
 const inputText = document.getElementById("inputData");
 
-function getCurrentEndpoint(){
+let loadingBubble = null;
+
+function getCurrentEndpoint() {
   return document.getElementById("endpoint").value;
 }
 
-function addBubble(text,from="api"){
-  const div=document.createElement("div");
-  div.className="bubble "+from;
-  div.innerHTML=text;
+function addBubble(text, from = "api", image = null, isImageBubble = false) {
+  const div = document.createElement("div");
+  div.className = `bubble ${from}`;
+
+  if (isImageBubble && image) {
+    div.classList.add("image-bubble");
+    const imgContent = document.createElement("div");
+    imgContent.className = "image-content";
+    const img = document.createElement("img");
+    img.src = image;
+    imgContent.appendChild(img);
+
+    if (text) {
+      const caption = document.createElement("div");
+      caption.className = "image-caption";
+      caption.innerHTML = text;
+      imgContent.appendChild(caption);
+    }
+
+    div.appendChild(imgContent);
+  } else {
+    div.innerHTML = text;
+    if (image) {
+      const img = document.createElement("img");
+      img.src = image;
+      div.appendChild(img);
+    }
+  }
+
   chatContainer.appendChild(div);
-  chatContainer.scrollTop=chatContainer.scrollHeight;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
   return div;
 }
 
-async function callApi(){
-  const endpoint=getCurrentEndpoint();
-  const input=inputText.value.trim();
-  if(!input) return;
+async function callApi() {
+  const endpoint = getCurrentEndpoint();
+  const input = inputText.value.trim();
+  if (!input) return;
 
-  addBubble(input,"user");
-  inputText.value="";
+  addBubble(input, "user");
+  inputText.value = "";
 
-  const loadingBubble=addBubble("Sedang memproses...","api");
+  loadingBubble = addBubble("API sedang memproses...", "api");
   loadingBubble.classList.add("loading-indicator");
 
-  const apiUrl=`https://api.ryzumi.vip/api/${endpoint}?text=${encodeURIComponent(input)}`;
-  console.log("Request ke:",apiUrl);
+  const apiUrl = `https://api.ryzumi.vip/api/${endpoint}?text=${encodeURIComponent(input)}`;
 
-  try{
-    const res=await fetch(apiUrl,{
-      method:"GET",
-      mode:"cors"
+  console.log("Request ke:", apiUrl);
+
+  try {
+    const res = await fetch(apiUrl, {
+      method: "GET",
+      mode: "cors"
     });
 
     loadingBubble.remove();
 
-    if(!res.ok){
-      throw new Error("Status "+res.status+" - "+res.statusText);
+    if (!res.ok) {
+      throw new Error(`Status ${res.status} - ${res.statusText}`);
     }
 
-    const contentType=res.headers.get("content-type") || "";
+    const contentType = res.headers.get("content-type") || "";
 
-    if(contentType.includes("application/json")){
-      const json=await res.json();
-      if(json.result){
-        addBubble(json.result,"api");
-      }else if(json.answer){
-        addBubble(json.answer,"api");
-      }else{
-        addBubble(JSON.stringify(json,null,2),"api");
+    if (contentType.includes("application/json")) {
+      const json = await res.json();
+
+      if (json.result) {
+        addBubble(json.result, "api");
+      } else if (json.answer) {
+        addBubble(json.answer, "api");
+      } else if (json.image) {
+        addBubble("📷 Hasil gambar:", "api", json.image, true);
+      } else {
+        addBubble(JSON.stringify(json, null, 2), "api");
       }
-    }else{
-      const text=await res.text();
-      addBubble(text.substring(0,500),"api");
+
+    } else if (contentType.includes("image/")) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      addBubble("📷 Hasil gambar:", "api", url, true);
+
+    } else {
+      const text = await res.text();
+      addBubble(text.substring(0, 500), "api");
     }
 
-  }catch(err){
-    loadingBubble.remove();
-    addBubble("❌ ERROR: "+err.message,"api");
+  } catch (err) {
+    if (loadingBubble) loadingBubble.remove();
+    addBubble("❌ ERROR: " + err.message, "api");
+  } finally {
+    loadingBubble = null;
   }
 }
 </script>
 
-</body>
+  </body>
 </html>
