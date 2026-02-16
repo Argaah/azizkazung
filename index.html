@@ -1,130 +1,807 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Chat Gratis</title>
-
-<style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#1f1f1f;
-  color:white;
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-}
-header{
-  padding:15px;
-  background:#2a2a2a;
-  text-align:center;
-}
-.chat{
-  flex:1;
-  overflow-y:auto;
-  padding:20px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.bubble{
-  max-width:75%;
-  padding:12px;
-  border-radius:15px;
-}
-.user{
-  background:#4f46e5;
-  align-self:flex-end;
-}
-.bot{
-  background:#333;
-  align-self:flex-start;
-}
-footer{
-  display:flex;
-  padding:15px;
-  background:#2a2a2a;
-  gap:10px;
-}
-input{
-  flex:1;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:#333;
-  color:white;
-}
-button{
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:#4f46e5;
-  color:white;
-}
-</style>
-</head>
-
-<body>
-
-<header>AI Gratis Tanpa Backend</header>
-
-<div class="chat" id="chat"></div>
-
-<footer>
-<input type="text" id="input"
-placeholder="Tulis pesan..."
-onkeydown="if(event.key==='Enter'){send()}">
-<button onclick="send()">Kirim</button>
-</footer>
-
-<script>
-const chat = document.getElementById("chat");
-const input = document.getElementById("input");
-
-function bubble(text,type){
-  const div=document.createElement("div");
-  div.className="bubble "+type;
-  div.innerText=text;
-  chat.appendChild(div);
-  chat.scrollTop=chat.scrollHeight;
-}
-
-async function send(){
-  const text=input.value.trim();
-  if(!text) return;
-
-  bubble(text,"user");
-  input.value="";
-  bubble("Mengetik...","bot");
-
-  try{
-    const res=await fetch(
-      "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium",
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-        body:JSON.stringify({inputs:text})
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>💬 ChatAPI Ryzumi</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Define basic font size for responsive units */
+        font-size: 16px; /* Default for larger screens */
       }
-    );
 
-    const data=await res.json();
-    document.querySelector(".bot:last-child").remove();
+      * {
+        box-sizing: border-box;
+        transition: 0.3s ease;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        margin: 0;
+        background: #1f1f1f;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden; /* Prevent body scroll, chat-container will scroll */
+      }
+      header {
+        padding: 1rem 1.25rem; /* Use rem for responsive padding */
+        background: #2a2a2a;
+        display: flex;
+        flex-direction: column; /* Stack elements vertically on small screens */
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #333;
+        gap: 0.5rem; /* Space between title and select */
+      }
+      header h1 {
+        margin: 0;
+        font-size: 1.25rem; /* Use rem for font size */
+        text-align: center;
+      }
+      header select {
+        background: #333;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem; /* Use rem for padding */
+        font-size: 0.9rem; /* Slightly smaller font for select */
+        width: 100%; /* Full width on small screens */
+        max-width: 300px; /* Max width for select */
+      }
+      .chat-container {
+        flex: 1;
+        padding: 1.25rem; /* Use rem for padding */
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem; /* Use rem for gap */
+        scrollbar-width: thin; /* For Firefox */
+        scrollbar-color: #4f46e5 #2a2a2a; /* For Firefox */
+      }
+      /* Custom scrollbar for Webkit browsers */
+      .chat-container::-webkit-scrollbar {
+        width: 8px;
+      }
 
-    if(Array.isArray(data)){
-      bubble(data[0].generated_text,"bot");
-    }else{
-      bubble("AI sedang sibuk, coba lagi.","bot");
-    }
+      .chat-container::-webkit-scrollbar-track {
+        background: #2a2a2a;
+        border-radius: 10px;
+      }
 
-  }catch(err){
-    document.querySelector(".bot:last-child").remove();
-    bubble("Server error.","bot");
-  }
-}
-</script>
+      .chat-container::-webkit-scrollbar-thumb {
+        background-color: #4f46e5;
+        border-radius: 10px;
+        border: 2px solid #2a2a2a;
+      }
 
-</body>
+      .bubble {
+        max-width: 85%; /* Slightly more width for bubbles on mobile */
+        padding: 0.75rem 1rem; /* Use rem for padding */
+        border-radius: 1rem; /* Use rem for border-radius */
+        word-break: break-word;
+        white-space: pre-wrap;
+        position: relative;
+        line-height: 1.4;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        animation: fadeInUp 0.3s ease;
+        font-size: 0.95rem; /* Adjust bubble font size */
+      }
+      .bubble.user {
+        background: #4f46e5;
+        align-self: flex-end;
+        border-bottom-right-radius: 0;
+      }
+      .bubble.api {
+        background: #333;
+        align-self: flex-start;
+        border-bottom-left-radius: 0;
+      }
+      .bubble img {
+        max-width: 100%;
+        margin-top: 0.625rem; /* Use rem for margin */
+        border-radius: 0.625rem; /* Use rem for border-radius */
+        display: block;
+      }
+      .bubble.image-bubble {
+        padding: 0.5rem; /* Adjust padding for image bubbles */
+        background: none;
+        box-shadow: none;
+      }
+      .bubble.image-bubble .image-content {
+        max-width: 15.625rem; /* Max width for image in bubble (250px) */
+        border-radius: 1rem; /* Use rem for border-radius */
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+      .bubble.image-bubble.user .image-content {
+        background: #4f46e5;
+        border-bottom-right-radius: 0;
+      }
+      .bubble.image-bubble.api .image-content {
+        background: #333;
+        border-bottom-left-radius: 0;
+      }
+      .bubble.image-bubble .image-content img {
+        width: 100%;
+        height: auto;
+        margin: 0;
+        border-radius: 0;
+        display: block;
+      }
+      .bubble.image-bubble .image-caption {
+        padding: 0.5rem 0.75rem; /* Use rem for padding */
+        color: #fff;
+        font-size: 0.85rem; /* Adjust caption font size */
+        word-break: break-word;
+      }
+      .loading-indicator {
+        font-style: italic;
+        color: #aaa;
+        align-self: flex-start;
+        padding: 0.3125rem 0.625rem; /* Use rem for padding */
+        font-size: 0.8rem; /* Adjust font size */
+      }
+      footer {
+        padding: 0.9375rem 1.25rem; /* Use rem for padding */
+        background: #2a2a2a;
+        border-top: 1px solid #333;
+      }
+      .controls {
+        display: flex;
+        gap: 0.625rem; /* Use rem for gap */
+        align-items: center;
+      }
+      input[type="text"] {
+        flex: 1;
+        padding: 0.625rem; /* Use rem for padding */
+        border-radius: 0.625rem; /* Use rem for border-radius */
+        border: none;
+        background: #333;
+        color: #fff;
+        font-size: 0.95rem; /* Adjust font size */
+      }
+      button {
+        padding: 0.625rem 1rem; /* Use rem for padding */
+        border-radius: 0.625rem; /* Use rem for border-radius */
+        border: none;
+        background: #4f46e5;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 0.95rem; /* Adjust font size */
+        flex-shrink: 0; /* Prevent button from shrinking */
+      }
+      button:hover {
+        background: #6366f1;
+      }
+      #uploadLabel {
+        cursor: pointer;
+        font-size: 1.5rem; /* Larger icon for easier tapping */
+        padding: 0.5rem; /* Adjust padding */
+        color: #aaa;
+        background: #333;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px; /* Fixed width for circular button */
+        height: 40px; /* Fixed height for circular button */
+        flex-shrink: 0;
+      }
+      #imageInput {
+        display: none;
+      }
+      #previewImageContainer {
+        display: none;
+        padding: 0.625rem; /* Use rem for padding */
+        background: #2a2a2a;
+        border-top-left-radius: 0.75rem;
+        border-top-right-radius: 0.75rem;
+        margin-bottom: 0.625rem;
+        border-bottom: 1px solid #333;
+        position: relative;
+        align-items: center; /* Vertically align image and close button */
+        justify-content: center; /* Center content horizontally */
+      }
+      #previewImageContainer img {
+        max-height: 7.5rem; /* Max height for preview image (120px) */
+        border-radius: 0.5rem; /* Use rem for border-radius */
+        display: block;
+        margin: 0 auto; /* Center image */
+      }
+      #clearImagePreview {
+        position: absolute;
+        top: 0.3125rem; /* 5px */
+        right: 0.625rem; /* 10px */
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 1.5rem; /* 24px */
+        height: 1.5rem; /* 24px */
+        font-size: 0.875rem; /* 14px */
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0; /* Remove default padding for button */
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(0.625rem); /* 10px */
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* --- Media Queries for Responsiveness --- */
+
+      /* Adjustments for screens smaller than 768px (typical tablet breakpoint) */
+      @media (max-width: 48em) {
+        /* 768px / 16px = 48em */
+        :root {
+          font-size: 15px; /* Slightly smaller base font size for tablets */
+        }
+
+        header {
+          flex-direction: column; /* Stack elements vertically */
+          align-items: center;
+          padding: 1rem;
+        }
+
+        header select {
+          margin-top: 0.5rem; /* Add some space when stacked */
+          width: 90%; /* Make select box wider */
+        }
+
+        .chat-container {
+          padding: 1rem;
+        }
+
+        .bubble {
+          max-width: 90%; /* Allow bubbles to take more width */
+          font-size: 0.9rem;
+        }
+
+        .bubble.image-bubble .image-content {
+          max-width: 100%; /* Image bubbles can take full width of parent */
+        }
+
+        footer {
+          padding: 0.75rem 1rem;
+        }
+
+        .controls {
+          flex-wrap: wrap; /* Allow controls to wrap to next line */
+          justify-content: center; /* Center controls when wrapped */
+        }
+
+        input[type="text"] {
+          min-width: 70%; /* Ensure input field is not too small */
+          margin-bottom: 0.5rem; /* Space when wrapped */
+        }
+
+        button,
+        #uploadLabel {
+          flex-grow: 1; /* Allow buttons to grow and fill space */
+          max-width: 48%; /* Two buttons per row when wrapped */
+        }
+      }
+
+      /* Adjustments for screens smaller than 576px (typical phone breakpoint) */
+      @media (max-width: 36em) {
+        /* 576px / 16px = 36em */
+        :root {
+          font-size: 14px; /* Even smaller base font size for phones */
+        }
+
+        header h1 {
+          font-size: 1.1rem;
+        }
+
+        header select {
+          font-size: 0.85rem;
+          padding: 0.6rem 0.8rem;
+        }
+
+        .chat-container {
+          padding: 0.75rem;
+          gap: 0.5rem;
+        }
+
+        .bubble {
+          padding: 0.6rem 0.8rem;
+          font-size: 0.85rem;
+          max-width: 95%; /* Almost full width for bubbles */
+        }
+
+        .bubble.image-bubble .image-caption {
+          font-size: 0.8rem;
+        }
+
+        footer {
+          padding: 0.6rem 0.8rem;
+        }
+
+        .controls {
+          flex-direction: column; /* Stack controls vertically */
+          gap: 0.5rem;
+        }
+
+        input[type="text"] {
+          width: 100%; /* Full width for input */
+          margin-bottom: 0; /* Remove margin when stacked */
+        }
+
+        button,
+        #uploadLabel {
+          width: 100%; /* Full width for buttons */
+          max-width: 100%; /* Override max-width from tablet styles */
+          padding: 0.8rem; /* Slightly larger tap area for buttons */
+        }
+
+        #uploadLabel {
+          font-size: 1.8rem; /* Larger icon for easy tapping */
+          width: auto; /* Allow width to be determined by content + padding */
+          height: auto; /* Allow height to be determined by content + padding */
+          border-radius: 0.625rem; /* Match button border-radius */
+        }
+
+        #previewImageContainer {
+          padding: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        #previewImageContainer img {
+          max-height: 6rem; /* Smaller preview image */
+        }
+
+        #clearImagePreview {
+          width: 1.2rem;
+          height: 1.2rem;
+          font-size: 0.75rem;
+          top: 0.2rem;
+          right: 0.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>adr6hmn.com</h1>
+      <select id="endpoint" onchange="onEndpointChange()">
+        <option value="downloader/ttdl">Downloader - TikTok Downloader</option>
+        <option value="downloader/ytmp4">Downloader - YouTube MP4</option>
+        <option value="downloader/ytmp3">Downloader - YouTube MP3</option>
+        <option value="downloader/twitter">Downloader - Twitter</option>
+        <option value="downloader/igdl">Downloader - Instagram</option>
+        <option value="downloader/aiodown">Downloader - AIO Downloader</option>
+        <option value="ai/chatgpt">AI - ChatGPT</option>
+        <option value="ai/deepseek">AI - DeepSeek AI</option>
+        <option value="ai/gemini">AI - Gemini AI</option>
+        <option value="ai/v2/remini">AI - Remini v2</option>
+        <option value="ai/v2/text2img">AI - Text to Image v2</option>
+        <option value="ai/toanime">AI - ToAnime</option>
+      </select>
+    </header>
+
+    <div class="chat-container" id="chatContainer"></div>
+
+    <footer>
+      <div id="previewImageContainer">
+        <img id="previewImage" src="" />
+        <button id="clearImagePreview">X</button>
+      </div>
+      <div class="controls">
+        <input
+          type="text"
+          id="inputData"
+          placeholder="Tulis pesan atau link..."
+          onkeydown="if(event.key==='Enter'){callApi()}"
+        />
+        <label id="uploadLabel" for="imageInput">📎</label>
+        <input type="file" id="imageInput" accept="image/*" />
+        <button onclick="callApi()">📤</button>
+      </div>
+    </footer>
+
+    <script>
+      const chatContainer = document.getElementById("chatContainer");
+      const inputText = document.getElementById("inputData");
+      const imageInput = document.getElementById("imageInput");
+      const previewImageContainer = document.getElementById(
+        "previewImageContainer"
+      );
+      const previewImage = document.getElementById("previewImage");
+      const clearImagePreview = document.getElementById("clearImagePreview");
+      const imgbbApiKey = "82e5388977cf3197d9927932c4d41074";
+
+      const endpointDescriptions = {
+        "downloader/ttdl": "Download video TikTok tanpa watermark.",
+        "downloader/ytmp4": "Unduh video YouTube dalam format MP4.",
+        "downloader/ytmp3": "Konversi dan unduh audio YouTube (MP3).",
+        "ai/chatgpt": "Model ChatGPT untuk percakapan dan penjawaban cerdas.",
+        "ai/deepseek": "AI dari DeepSeek untuk pertanyaan berbasis teks.",
+        "ai/gemini": "Gemini AI buatan Google untuk respons natural.",
+        "ai/v2/remini": "Remini v2 untuk meningkatkan kualitas gambar.",
+        "ai/v2/text2img": "Buat gambar dari teks menggunakan AI v2.",
+        "ai/toanime": "Ubah foto menjadi versi anime.",
+        "downloader/twitter": "Unduh video dari Twitter (X).",
+        "downloader/igdl": "Unduh foto dan video dari Instagram.",
+        "downloader/aiodown": "Downloader all-in-one untuk berbagai platform.",
+      };
+
+      let loadingBubble = null; // Variable to hold the loading indicator bubble
+
+      // --- Image Preview Logic ---
+      imageInput.addEventListener("change", function () {
+        const file = this.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            previewImage.src = e.target.result;
+            previewImageContainer.style.display = "flex"; // Show the preview container
+          };
+          reader.readAsDataURL(file);
+        } else {
+          previewImage.src = "";
+          previewImageContainer.style.display = "none";
+        }
+      });
+
+      clearImagePreview.addEventListener("click", () => {
+        imageInput.value = "";
+        previewImage.src = "";
+        previewImageContainer.style.display = "none";
+      });
+      // --- End Image Preview Logic ---
+
+      function getCurrentEndpoint() {
+        return document.getElementById("endpoint").value;
+      }
+
+      function addBubble(
+        text,
+        from = "api",
+        image = null,
+        isImageBubble = false
+      ) {
+        const div = document.createElement("div");
+        div.className = `bubble ${from}`;
+
+        if (isImageBubble && image) {
+          div.classList.add("image-bubble");
+          const imgContent = document.createElement("div");
+          imgContent.className = "image-content";
+          const img = document.createElement("img");
+          img.src = image;
+          imgContent.appendChild(img);
+          if (text) {
+            const caption = document.createElement("div");
+            caption.className = "image-caption";
+            caption.innerHTML = text;
+            imgContent.appendChild(caption);
+          }
+          div.appendChild(imgContent);
+        } else {
+          div.innerHTML = text;
+          if (image) {
+            const img = document.createElement("img");
+            img.src = image;
+            div.appendChild(img);
+          }
+        }
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        saveChatHistory();
+        return div; // Return the created bubble for potential modification (e.g., loading indicator)
+      }
+
+      function saveChatHistory() {
+        const endpoint = getCurrentEndpoint();
+        const bubbles = Array.from(document.querySelectorAll(".bubble")).map(
+          (b) => {
+            let imageSrc = null;
+            let textContent = b.innerHTML; // Default to innerHTML
+
+            if (b.classList.contains("image-bubble")) {
+              const imgElement = b.querySelector(".image-content img");
+              const captionElement = b.querySelector(".image-caption");
+              if (imgElement) imageSrc = imgElement.src;
+              textContent = captionElement ? captionElement.innerHTML : "";
+            } else {
+              const imgElement = b.querySelector("img");
+              if (imgElement) {
+                imageSrc = imgElement.src;
+                // Remove the img tag from the saved HTML content
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = b.innerHTML;
+                const imgToRemove = tempDiv.querySelector("img");
+                if (imgToRemove) imgToRemove.remove();
+                textContent = tempDiv.innerHTML;
+              }
+            }
+
+            return {
+              from: b.classList.contains("user") ? "user" : "api",
+              html: textContent,
+              image: imageSrc,
+              isImageBubble: b.classList.contains("image-bubble"),
+            };
+          }
+        );
+        localStorage.setItem(`chat-${endpoint}`, JSON.stringify(bubbles));
+      }
+
+      function loadChatHistory() {
+        chatContainer.innerHTML = "";
+        const endpoint = getCurrentEndpoint();
+        const history = JSON.parse(
+          localStorage.getItem(`chat-${endpoint}`) || "[]"
+        );
+        history.forEach((b) => {
+          addBubble(b.html, b.from, b.image, b.isImageBubble);
+        });
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
+      function onEndpointChange() {
+        loadChatHistory();
+        const endpoint = getCurrentEndpoint();
+        const desc =
+          endpointDescriptions[endpoint] || "Gunakan API ini sesuai kebutuhan.";
+        addBubble(`📌 ${desc}`, "api");
+      }
+
+      async function callApi() {
+        const endpoint = getCurrentEndpoint();
+        const input = inputText.value.trim();
+        const imageFile = imageInput.files[0];
+        let apiUrl = `https://api.ryzumi.vip/api/${endpoint}`;
+
+        const imageEndpoints = /remini|toanime/;
+        const textEndpoints = /chatgpt|gemini|deepseek/;
+        const promptEndpoints = /text2img/;
+
+        if (!input && !imageFile) return;
+
+        // Add user's message/image bubble
+        if (imageFile) {
+          addBubble(
+            input || "Gambar dikirim",
+            "user",
+            URL.createObjectURL(imageFile),
+            true
+          );
+        } else if (input) {
+          addBubble(input, "user");
+        }
+
+        // Clear input and image preview
+        inputText.value = "";
+        imageInput.value = "";
+        previewImage.src = "";
+        previewImageContainer.style.display = "none";
+
+        // Add loading indicator
+        loadingBubble = addBubble("API sedang memproses...", "api");
+        loadingBubble.classList.add("loading-indicator");
+
+        try {
+          if (imageEndpoints.test(endpoint)) {
+            if (!imageFile) {
+              loadingBubble.remove(); // Remove loading indicator
+              addBubble("⚠️ Silakan upload gambar", "api");
+              return;
+            }
+            const formData = new FormData();
+            formData.append("image", imageFile);
+            const imgbbRes = await fetch(
+              `https://api.imgbb.com/1/upload?key=${imgbbApiKey}`,
+              { method: "POST", body: formData }
+            );
+            const imgbbJson = await imgbbRes.json();
+            const imageURL = imgbbJson.data?.url;
+            if (!imageURL) throw new Error("Gagal upload gambar ke ImgBB.");
+            apiUrl += `?url=${encodeURIComponent(imageURL)}`;
+            if (endpoint.includes("remini")) apiUrl += `&scale=2`;
+          } else {
+            if (!input) {
+              loadingBubble.remove(); // Remove loading indicator
+              addBubble("⚠️ Silakan masukkan teks.", "api");
+              return;
+            }
+            let paramKey = "url";
+            if (textEndpoints.test(endpoint)) paramKey = "text";
+            else if (promptEndpoints.test(endpoint)) paramKey = "prompt";
+            apiUrl += `?${paramKey}=${encodeURIComponent(input)}`;
+          }
+
+          const res = await fetch(apiUrl);
+          loadingBubble.remove(); // Remove loading indicator once response is received
+
+          if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(
+              `API tidak merespons. Status: ${res.status}. Detail: ${errorText}`
+            );
+          }
+          const contentType = res.headers.get("content-type");
+
+          if (contentType.includes("json")) {
+            const json = await res.json();
+            handleJson(endpoint, json);
+          } else if (contentType.includes("image/")) {
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            addBubble("📷 Hasil gambar:", "api", url, true);
+          } else {
+            const responseText = await res.text();
+            addBubble(
+              `✅ Respons diterima tapi tidak dikenali formatnya. Konten: ${responseText.substring(
+                0,
+                200
+              )}...`,
+              "api"
+            );
+          }
+        } catch (e) {
+          if (loadingBubble) {
+            loadingBubble.remove(); // Ensure loading indicator is removed on error
+          }
+          addBubble(`❌ ${e.message}`, "api");
+        } finally {
+          loadingBubble = null; // Reset loading bubble
+        }
+      }
+
+      function handleJson(endpoint, json) {
+        const label =
+          document.getElementById("endpoint").selectedOptions[0].textContent;
+
+        // TikTok
+        if (endpoint.includes("ttdl") && json.data?.data) {
+          const data = json.data.data;
+          const html = `
+      <strong>🎬 Video TikTok</strong><br>
+      <img src="${data.cover}" alt="cover"><br>
+      ▶️ <a href="${data.play}" target="_blank">Play</a> |
+      <a href="${data.wmplay}" target="_blank">Watermarked</a> |
+      <a href="${data.nowmplay}" target="_blank">No Watermark</a><br>
+      ⏱️ <b>Durasi:</b> ${data.duration}s
+    `;
+          addBubble(html, "api");
+          return;
+        }
+
+        // YouTube
+        if (
+          (endpoint.includes("ytmp4") || endpoint.includes("ytmp3")) &&
+          json.title &&
+          json.url
+        ) {
+          const html = `
+      <strong>🎬 ${json.title}</strong><br>
+      <img src="${json.thumbnail}" alt="thumbnail"><br>
+      👤 <b>Author:</b> ${json.author || "-"}<br>
+      🕒 <b>Durasi:</b> ${
+            json.lengthSeconds
+              ? Math.floor(json.lengthSeconds / 60) +
+                ":" +
+                (json.lengthSeconds % 60).toString().padStart(2, "0")
+              : "-"
+          }<br>
+      📅 <b>Upload:</b> ${json.uploadDate || "-"}<br>
+      🔗 <a href="${json.url}" target="_blank">⬇️ Download (${
+            json.quality || "unknown"
+          })</a>
+    `;
+          addBubble(html, "api");
+          return;
+        }
+
+        // Twitter Downloader
+        if (
+          endpoint.includes("twitter") &&
+          json.media &&
+          Array.isArray(json.media)
+        ) {
+          json.media.forEach((media, index) => {
+            const html = `
+        <strong>🐦 Twitter Video ${index + 1}</strong><br>
+        🎞️ <b>Kualitas:</b> ${media.quality || "N/A"}<br>
+        🔗 <a href="${
+              media.url
+            }" target="_blank" style="color: #4f46e5; font-weight: bold;">⬇️ Download Video</a>
+      `;
+            addBubble(html, "api");
+          });
+          return;
+        }
+
+        // Instagram, AIO Downloader
+        if (
+          (endpoint.includes("igdl") || endpoint.includes("aiodown")) &&
+          Array.isArray(json.data)
+        ) {
+          json.data.forEach((item, i) => {
+            const html = `
+        <strong>📥 Media ${i + 1}</strong><br>
+        ${
+          item.thumbnail
+            ? `<img src="${item.thumbnail}" alt="thumbnail" style="max-width:100%; border-radius: 12px; margin: 8px 0;"><br>`
+            : ""
+        }
+        📁 <a href="${item.url}" target="_blank">Download</a><br>
+        🕒 <b>Durasi:</b> ${item.duration || "-"} detik
+      `;
+            addBubble(html, "api");
+          });
+          return;
+        }
+
+        // AIO Downloader (fix card view, assuming the array is directly the data)
+        // This condition might overlap with the one above if json.data is an array,
+        // so ensure the more specific one (json.data) is checked first.
+        if (
+          endpoint.includes("downloader/aio") &&
+          Array.isArray(json) &&
+          !json.data
+        ) {
+          // Added !json.data to avoid conflict
+          json.forEach((item, index) => {
+            const html = `
+        <strong>🌐 AIO Video ${index + 1}</strong><br>
+        🎬 <b>${item.title || "Tanpa Judul"}</b><br>
+        <img src="${
+              item.thumbnail || item.image
+            }" alt="thumbnail" style="max-width:100%; border-radius: 12px; margin: 8px 0;"><br>
+        🔗 <a href="${
+              item.video
+            }" target="_blank" style="color: #4f46e5; font-weight: bold;">⬇️ Download Video</a>
+      `;
+            addBubble(html, "api");
+          });
+          return;
+        }
+
+        // Handle Text2Img specifically where the result is an image URL in json.image
+        if (endpoint.includes("text2img") && json.image) {
+          addBubble(`${label}`, "api", json.image, true); // Use true for isImageBubble
+          return;
+        }
+
+        // Fallback for general text or image results
+        if (json.result) {
+          addBubble(`${label}: ${json.result}`, "api");
+        } else if (json.answer) {
+          addBubble(`${label}: ${json.answer}`, "api");
+        } else if (json.image) {
+          // Generic image handling, might be overridden by specific cases like text2img
+          addBubble(`${label}`, "api", json.image, true);
+        } else if (json.video) {
+          // Assuming video might be a direct URL or handled by other specific downloaders
+          addBubble(`${label}: Video tersedia`, "api", json.video); // You might want to display a video player or direct link
+        } else {
+          // If none of the above, display the raw JSON for debugging
+          addBubble(JSON.stringify(json, null, 2), "api");
+        }
+      }
+
+      // Jalankan di awal saat halaman dibuka
+      window.onload = () => {
+        onEndpointChange();
+      };
+    </script>
+  </body>
 </html>
